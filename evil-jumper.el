@@ -89,12 +89,13 @@
         (first-file-name nil))
     (when (and (not file-name) (equal buffer-name "*scratch*"))
       (setq file-name buffer-name))
-    (when evil-jumper--list
-      (setq first-pos (caar evil-jumper--list))
-      (setq first-file-name (cadar evil-jumper--list)))
-    (unless (and (equal first-pos current-pos)
-                 (equal first-file-name file-name))
-      (push `(,current-pos ,file-name) evil-jumper--list))))
+    (when file-name
+      (when evil-jumper--list
+        (setq first-pos (caar evil-jumper--list))
+        (setq first-file-name (cadar evil-jumper--list)))
+      (unless (and (equal first-pos current-pos)
+                   (equal first-file-name file-name))
+        (push `(,current-pos ,file-name) evil-jumper--list)))))
 
 (defun evil-jumper--set-jump ()
   ;; clear out intermediary jumps when a new one is set

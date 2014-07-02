@@ -83,11 +83,18 @@
   (while (> (length evil-jumper--list) evil-jumper-max-length)
     (nbutlast evil-jumper--list 1))
   (let ((file-name (buffer-file-name))
-        (buffer-name (buffer-name)))
-    (if file-name
-        (push `(,(point) ,file-name) evil-jumper--list)
-      (when (equal buffer-name "*scratch*")
-        (push `(,(point) ,buffer-name) evil-jumper--list)))))
+        (buffer-name (buffer-name))
+        (current-pos (point))
+        (first-pos nil)
+        (first-file-name nil))
+    (when (and (not file-name) (equal buffer-name "*scratch*"))
+      (setq file-name buffer-name))
+    (when evil-jumper--list
+      (setq first-pos (caar evil-jumper--list))
+      (setq first-file-name (cadar evil-jumper--list)))
+    (unless (and (equal first-pos current-pos)
+                 (equal first-file-name file-name))
+      (push `(,current-pos ,file-name) evil-jumper--list))))
 
 (defun evil-jumper--set-jump ()
   ;; clear out intermediary jumps when a new one is set

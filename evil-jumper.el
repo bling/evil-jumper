@@ -111,7 +111,7 @@
 (defadvice evil-set-jump (after advice-for-evil-set-jump activate)
   (evil-jumper--set-jump))
 
-(defadvice find-file-noselect (after advice-for-find-file-noselect activate)
+(defadvice switch-to-buffer (after advice-for-switch-to-buffer activate)
   (unless evil-jumper--jumping
     (evil-jumper--set-jump)))
 

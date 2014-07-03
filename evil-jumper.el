@@ -57,6 +57,11 @@
   :type 'boolean
   :group 'evil-jumper)
 
+(defcustom evil-jumper-ignored-file-patterns '("COMMIT_EDITMSG")
+  "A list of pattern regexps to match on the file path to exclude from being included in the jump list."
+  :type '(repeat string)
+  :group 'evil-jumper)
+
 (defvar evil-jumper--list nil)
 (defvar evil-jumper--idx -1)
 (defvar evil-jumper--jumping nil)
@@ -80,22 +85,28 @@
       (recenter))))
 
 (defun evil-jumper--push ()
+  "Pushes the current cursor/file position to the jump list."
   (while (> (length evil-jumper--list) evil-jumper-max-length)
     (nbutlast evil-jumper--list 1))
   (let ((file-name (buffer-file-name))
         (buffer-name (buffer-name))
         (current-pos (point))
         (first-pos nil)
-        (first-file-name nil))
+        (first-file-name nil)
+        (excluded nil))
     (when (and (not file-name) (equal buffer-name "*scratch*"))
       (setq file-name buffer-name))
     (when file-name
-      (when evil-jumper--list
-        (setq first-pos (caar evil-jumper--list))
-        (setq first-file-name (cadar evil-jumper--list)))
-      (unless (and (equal first-pos current-pos)
-                   (equal first-file-name file-name))
-        (push `(,current-pos ,file-name) evil-jumper--list)))))
+      (dolist (pattern evil-jumper-ignored-file-patterns)
+        (when (string-match-p pattern file-name)
+          (setq excluded t)))
+      (unless excluded
+        (when evil-jumper--list
+          (setq first-pos (caar evil-jumper--list))
+          (setq first-file-name (cadar evil-jumper--list)))
+        (unless (and (equal first-pos current-pos)
+                     (equal first-file-name file-name))
+          (push `(,current-pos ,file-name) evil-jumper--list))))))
 
 (defun evil-jumper--set-jump ()
   ;; clear out intermediary jumps when a new one is set

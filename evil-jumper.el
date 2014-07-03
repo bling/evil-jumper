@@ -67,22 +67,20 @@
 (defvar evil-jumper--jumping nil)
 
 (defun evil-jumper--jump-to-index (idx)
-  (when (>= idx (length evil-jumper--list))
-    (setq idx 0))
-  (when (< idx 0)
-    (setq idx (- (length evil-jumper--list) 1)))
-  (setq evil-jumper--idx idx)
-  (let* ((place (nth idx evil-jumper--list))
-         (pos (car place))
-         (file-name (cadr place)))
-    (setq evil-jumper--jumping t)
-    (if (equal file-name "*scratch*")
-        (switch-to-buffer file-name)
-      (find-file file-name))
-    (setq evil-jumper--jumping nil)
-    (goto-char pos)
-    (when evil-jumper-auto-center
-      (recenter))))
+  (when (and (< idx (length evil-jumper--list))
+             (>= idx 0))
+    (setq evil-jumper--idx idx)
+    (let* ((place (nth idx evil-jumper--list))
+           (pos (car place))
+           (file-name (cadr place)))
+      (setq evil-jumper--jumping t)
+      (if (equal file-name "*scratch*")
+          (switch-to-buffer file-name)
+        (find-file file-name))
+      (setq evil-jumper--jumping nil)
+      (goto-char pos)
+      (when evil-jumper-auto-center
+        (recenter)))))
 
 (defun evil-jumper--push ()
   "Pushes the current cursor/file position to the jump list."
@@ -109,10 +107,11 @@
           (push `(,current-pos ,file-name) evil-jumper--list))))))
 
 (defun evil-jumper--set-jump ()
-  ;; clear out intermediary jumps when a new one is set
-  (nbutlast evil-jumper--list evil-jumper--idx)
-  (setq evil-jumper--idx -1)
-  (evil-jumper--push))
+  (unless evil-jumper--jumping
+    ;; clear out intermediary jumps when a new one is set
+    (nbutlast evil-jumper--list evil-jumper--idx)
+    (setq evil-jumper--idx -1)
+    (evil-jumper--push)))
 
 (evil-define-motion evil-jumper/backward (count)
   (let ((count (or count 1)))
@@ -131,8 +130,7 @@
   (evil-jumper--set-jump))
 
 (defadvice switch-to-buffer (after advice-for-switch-to-buffer activate)
-  (unless evil-jumper--jumping
-    (evil-jumper--set-jump)))
+  (evil-jumper--set-jump))
 
 (define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)
 (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward)

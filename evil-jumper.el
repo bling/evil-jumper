@@ -129,7 +129,7 @@
 (defadvice evil-set-jump (after advice-for-evil-set-jump activate)
   (evil-jumper--set-jump))
 
-(defadvice switch-to-buffer (after advice-for-switch-to-buffer activate)
+(defadvice switch-to-buffer (before advice-for-switch-to-buffer activate)
   (evil-jumper--set-jump))
 
 (define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)

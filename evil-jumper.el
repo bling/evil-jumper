@@ -31,10 +31,17 @@
 
 ;;; Commentary:
 ;;
+;; evil-jumper is an implementation of Vim's jump list which allows
+;; you to jump across buffer boundaries and revive dead buffers if
+;; necessary.  The jump list can also be persisted to a file and
+;; restored between sessions.
+;;
 ;; Install:
+;;
 ;; (require 'evil-jumper)
 ;;
 ;; Usage:
+;;
 ;; Requiring will automatically rebind C-o and C-i.
 
 ;;; Code:
@@ -66,6 +73,13 @@
   :type 'string
   :group 'evil-jumper)
 
+(defcustom evil-jumper-auto-save-interval 0
+  "If positive, specifies the interval in seconds to persist the jump list.
+
+Note: The value of `evil-jumper-file' must also be non-nil."
+  :type 'integer
+  :group 'evil-jumper)
+
 (defvar evil-jumper--list nil)
 (defvar evil-jumper--idx -1)
 (defvar evil-jumper--jumping nil)
@@ -87,8 +101,8 @@
   "Saves the current contents of the jump list to a persisted file."
   (with-temp-file evil-jumper-file
     (dolist (jump evil-jumper--list)
-      (let* ((pos (car jump))
-             (file-name (cadr jump)))
+      (let ((pos (car jump))
+            (file-name (cadr jump)))
         (when (file-exists-p file-name)
           (insert (format "%d" pos))
           (insert " ")
@@ -165,8 +179,10 @@
 (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward)
 
 (when evil-jumper-file
-  (add-hook 'after-init-hook 'evil-jumper--read-file)
-  (add-hook 'kill-emacs-hook 'evil-jumper--write-file))
+  (evil-jumper--read-file)
+  (add-hook 'kill-emacs-hook 'evil-jumper--write-file)
+  (when (> evil-jumper-auto-save-interval 0)
+    (run-with-timer evil-jumper-auto-save-interval evil-jumper-auto-save-interval 'evil-jumper--write-file)))
 
 (provide 'evil-jumper)
 

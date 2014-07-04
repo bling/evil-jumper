@@ -35,7 +35,6 @@
 ;; (require 'evil-jumper)
 ;;
 ;; Usage:
-;;
 ;; Requiring will automatically rebind C-o and C-i.
 
 ;;; Code:
@@ -80,7 +79,7 @@
                    (split-string (buffer-string) "\n" t))))
       (dolist (line lines)
         (let* ((parts (split-string line " "))
-               (pos (string-to-int (car parts)))
+               (pos (string-to-number (car parts)))
                (file-name (cadr parts)))
           (push (list pos file-name) evil-jumper--list))))))
 
@@ -131,7 +130,7 @@
       (unless excluded
         (when evil-jumper--list
           (setq first-pos (caar evil-jumper--list))
-          (setq first-file-name (cadar evil-jumper--list)))
+          (setq first-file-name (car (cdar evil-jumper--list))))
         (unless (and (equal first-pos current-pos)
                      (equal first-file-name file-name))
           (push `(,current-pos ,file-name) evil-jumper--list))))))
@@ -147,7 +146,7 @@
   (let ((count (or count 1)))
     (evil-motion-loop (nil count)
       (when (= evil-jumper--idx -1)
-        (incf evil-jumper--idx)
+        (setq evil-jumper--idx (+ evil-jumper--idx 1))
         (evil-jumper--push))
       (evil-jumper--jump-to-index (+ evil-jumper--idx 1)))))
 
@@ -170,3 +169,5 @@
   (add-hook 'kill-emacs-hook 'evil-jumper--write-file))
 
 (provide 'evil-jumper)
+
+;;; evil-jumper.el ends here

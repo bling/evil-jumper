@@ -62,9 +62,39 @@
   :type '(repeat string)
   :group 'evil-jumper)
 
+(defcustom evil-jumper-file nil
+  "The location of the file to save/load the jump list."
+  :type 'string
+  :group 'evil-jumper)
+
 (defvar evil-jumper--list nil)
 (defvar evil-jumper--idx -1)
 (defvar evil-jumper--jumping nil)
+
+(defun evil-jumper--read-file ()
+  "Restores the jump list from the persisted file."
+  (when (file-exists-p evil-jumper-file)
+    (setq evil-jumper--list nil)
+    (let ((lines (with-temp-buffer
+                   (insert-file-contents evil-jumper-file)
+                   (split-string (buffer-string) "\n" t))))
+      (dolist (line lines)
+        (let* ((parts (split-string line " "))
+               (pos (string-to-int (car parts)))
+               (file-name (cadr parts)))
+          (push (list pos file-name) evil-jumper--list))))))
+
+(defun evil-jumper--write-file ()
+  "Saves the current contents of the jump list to a persisted file."
+  (with-temp-file evil-jumper-file
+    (dolist (jump evil-jumper--list)
+      (let* ((pos (car jump))
+             (file-name (cadr jump)))
+        (when (file-exists-p file-name)
+          (insert (format "%d" pos))
+          (insert " ")
+          (insert file-name)
+          (insert "\n"))))))
 
 (defun evil-jumper--jump-to-index (idx)
   (when (and (< idx (length evil-jumper--list))
@@ -134,5 +164,9 @@
 
 (define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)
 (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward)
+
+(when evil-jumper-file
+  (add-hook 'after-init-hook 'evil-jumper--read-file)
+  (add-hook 'kill-emacs-hook 'evil-jumper--write-file))
 
 (provide 'evil-jumper)

@@ -176,7 +176,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   (evil-jumper--set-jump))
 
 (define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)
-(define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward)
+(when evil-want-C-i-jump
+  (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward))
 
 (when evil-jumper-file
   (evil-jumper--read-file)

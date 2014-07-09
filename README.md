@@ -12,3 +12,8 @@ usage
 =====
 
 Requiring the file will automatically set up `C-i` and `C-o`.
+
+license
+=======
+
+GPL3

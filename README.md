@@ -1,7 +1,7 @@
 evil-jumper
 ===========
 
-This changes the jump list behavior in evil-mode to behave more like Vim; specifically, it will jump across buffer boundaries, even if they are dead.
+evil-jumper is an implementation of Vim's jump list which allows you to jump across buffer boundaries and revive dead buffers if necessary.  The jump list can also be persisted to a file and restored between sessions.
 
 installation
 ============

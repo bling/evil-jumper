@@ -169,10 +169,10 @@ Note: The value of `evil-jumper-file' must also be non-nil."
     (evil-motion-loop (nil count)
       (evil-jumper--jump-to-index (- evil-jumper--idx 1)))))
 
-(defadvice evil-set-jump (after advice-for-evil-set-jump activate)
+(defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
   (evil-jumper--set-jump))
 
-(defadvice switch-to-buffer (before advice-for-switch-to-buffer activate)
+(defadvice switch-to-buffer (before evil-jumper--switch-to-buffer activate)
   (evil-jumper--set-jump))
 
 (define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)

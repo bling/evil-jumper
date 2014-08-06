@@ -180,6 +180,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 (when evil-want-C-i-jump
   (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward))
 
+(add-hook 'next-error-hook 'evil-jumper--set-jump)
+
 (when evil-jumper-file
   (evil-jumper--read-file)
   (add-hook 'kill-emacs-hook 'evil-jumper--write-file)

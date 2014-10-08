@@ -84,6 +84,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 
 
 (defvar evil-jumper--jumping nil)
+(defvar evil-jumper--debug nil)
 
 (defvar
   evil-jumper--window-jumps
@@ -93,6 +94,11 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 (defstruct evil-jumper-jump
   jumps
   (idx -1))
+
+(defun evil-jumper--message (format &rest args)
+  (when evil-jumper--debug
+    (setq format (concat "evil-jumper: " format))
+    (apply 'message format args)))
 
 
 (defun evil-jumper--get-current (&optional window)
@@ -180,6 +186,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
           (unless (and (equal first-pos current-pos)
                        (equal first-file-name file-name))
             (push `(,current-pos ,file-name) target-list)))))
+    (evil-jumper--message "%s %s" (selected-window) (car target-list))
     (evil-jumper--set-window-jump-list target-list)))
 
 (defun evil-jumper--set-jump ()
@@ -213,18 +220,20 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 
 (defun evil-jumper--window-configuration-hook (&rest args)
   (let* ((window-list (window-list))
-         (existing-window (car window-list)))
-    (when (> (length window-list) 1)
-      ;; the 2nd window is always the new one, is this reliable??
+         (existing-window (selected-window))
+         (new-window (previous-window)))
+    (when (and (not (eq existing-window new-window))
+               (> (length window-list) 1))
+      (evil-jumper--message "copying %s to %s" existing-window new-window)
       (let* ((source-jump-struct (evil-jumper--get-current existing-window))
              (source-list (evil-jumper-jump-jumps source-jump-struct))
-             (new-window (cadr window-list))
              (target-jump-struct (evil-jumper--get-current new-window))
              (target-list (evil-jumper-jump-jumps target-jump-struct)))
-          (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list))))
+        (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list))))
     ;; delete obsolete windows
     (maphash (lambda (key val)
                (unless (member key window-list)
+                 (evil-jumper--message "removing %s" key)
                  (remhash key evil-jumper--window-jumps)))
              evil-jumper--window-jumps)))
 

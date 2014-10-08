@@ -227,8 +227,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
       (evil-jumper--message "copying %s to %s" existing-window new-window)
       (let* ((source-jump-struct (evil-jumper--get-current existing-window))
              (source-list (evil-jumper-jump-jumps source-jump-struct))
-             (target-jump-struct (evil-jumper--get-current new-window))
-             (target-list (evil-jumper-jump-jumps target-jump-struct)))
+             (target-jump-struct (evil-jumper--get-current new-window)))
+        (setf (evil-jumper-jump-idx target-jump-struct) (evil-jumper-jump-idx source-jump-struct))
         (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list))))
     ;; delete obsolete windows
     (maphash (lambda (key val)

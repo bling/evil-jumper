@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0"))
 ;;
@@ -47,6 +47,7 @@
 
 ;;; Code:
 
+(require 'cl)
 (require 'evil)
 
 (defgroup evil-jumper nil
@@ -81,94 +82,162 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   :type 'integer
   :group 'evil-jumper)
 
-(defvar evil-jumper--list nil)
-(defvar evil-jumper--idx -1)
+
 (defvar evil-jumper--jumping nil)
+(defvar evil-jumper--debug nil)
+
+(defvar
+  evil-jumper--window-jumps
+  (make-hash-table)
+  "Hashtable which stores all jumps on a per window basis.")
+
+(defstruct evil-jumper-jump
+  jumps
+  (idx -1))
+
+(defun evil-jumper--message (format &rest args)
+  (when evil-jumper--debug
+    (setq format (concat "evil-jumper: " format))
+    (apply 'message format args)))
+
+
+(defun evil-jumper--get-current (&optional window)
+  (unless window
+    (setq window (frame-selected-window)))
+  (let* ((jump-struct (gethash window evil-jumper--window-jumps)))
+    (unless jump-struct
+      (setq jump-struct (make-evil-jumper-jump))
+      (puthash window jump-struct evil-jumper--window-jumps))
+    jump-struct))
+
+(defun evil-jumper--get-window-jump-list ()
+  (let ((struct (evil-jumper--get-current)))
+    (evil-jumper-jump-jumps struct)))
+
+(defun evil-jumper--set-window-jump-list (list)
+  (let ((struct (evil-jumper--get-current)))
+    (setf (evil-jumper-jump-jumps struct) list)))
 
 (defun evil-jumper--read-file ()
   "Restores the jump list from the persisted file."
   (when (file-exists-p evil-jumper-file)
-    (setq evil-jumper--list nil)
     (let ((lines (with-temp-buffer
                    (insert-file-contents evil-jumper-file)
-                   (split-string (buffer-string) "\n" t))))
+                   (split-string (buffer-string) "\n" t)))
+          (jumps nil))
       (dolist (line lines)
         (let* ((parts (split-string line " "))
                (pos (string-to-number (car parts)))
                (file-name (cadr parts)))
-          (push (list pos file-name) evil-jumper--list))))))
+          (push (list pos file-name) jumps)))
+      (evil-jumper--set-window-jump-list jumps))))
 
 (defun evil-jumper--write-file ()
   "Saves the current contents of the jump list to a persisted file."
   (with-temp-file evil-jumper-file
-    (dolist (jump evil-jumper--list)
-      (let ((pos (car jump))
-            (file-name (cadr jump)))
-        (when (file-exists-p file-name)
-          (insert (format "%d" pos))
-          (insert " ")
-          (insert file-name)
-          (insert "\n"))))))
+    (let ((jumps (evil-jumper--get-window-jump-list)))
+      (dolist (jump jumps)
+        (let ((pos (car jump))
+              (file-name (cadr jump)))
+          (when (file-exists-p file-name)
+            (insert (format "%d" pos))
+            (insert " ")
+            (insert file-name)
+            (insert "\n")))))))
 
 (defun evil-jumper--jump-to-index (idx)
-  (when (and (< idx (length evil-jumper--list))
-             (>= idx 0))
-    (setq evil-jumper--idx idx)
-    (let* ((place (nth idx evil-jumper--list))
-           (pos (car place))
-           (file-name (cadr place)))
-      (setq evil-jumper--jumping t)
-      (if (equal file-name "*scratch*")
-          (switch-to-buffer file-name)
-        (find-file file-name))
-      (setq evil-jumper--jumping nil)
-      (goto-char pos)
-      (when evil-jumper-auto-center
-        (recenter)))))
+  (let ((target-list (evil-jumper--get-window-jump-list)))
+    (when (and (< idx (length target-list))
+               (>= idx 0))
+      (setf (evil-jumper-jump-idx (evil-jumper--get-current)) idx)
+      (let* ((place (nth idx target-list))
+             (pos (car place))
+             (file-name (cadr place)))
+        (setq evil-jumper--jumping t)
+        (if (equal file-name "*scratch*")
+            (switch-to-buffer file-name)
+          (find-file file-name))
+        (setq evil-jumper--jumping nil)
+        (goto-char pos)
+        (when evil-jumper-auto-center
+          (recenter))))))
 
 (defun evil-jumper--push ()
   "Pushes the current cursor/file position to the jump list."
-  (while (> (length evil-jumper--list) evil-jumper-max-length)
-    (nbutlast evil-jumper--list 1))
-  (let ((file-name (buffer-file-name))
-        (buffer-name (buffer-name))
-        (current-pos (point))
-        (first-pos nil)
-        (first-file-name nil)
-        (excluded nil))
-    (when (and (not file-name) (equal buffer-name "*scratch*"))
-      (setq file-name buffer-name))
-    (when file-name
-      (dolist (pattern evil-jumper-ignored-file-patterns)
-        (when (string-match-p pattern file-name)
-          (setq excluded t)))
-      (unless excluded
-        (when evil-jumper--list
-          (setq first-pos (caar evil-jumper--list))
-          (setq first-file-name (car (cdar evil-jumper--list))))
-        (unless (and (equal first-pos current-pos)
-                     (equal first-file-name file-name))
-          (push `(,current-pos ,file-name) evil-jumper--list))))))
+  (let ((target-list (evil-jumper--get-window-jump-list)))
+    (while (> (length target-list) evil-jumper-max-length)
+      (nbutlast target-list 1))
+    (let ((file-name (buffer-file-name))
+          (buffer-name (buffer-name))
+          (current-pos (point))
+          (first-pos nil)
+          (first-file-name nil)
+          (excluded nil))
+      (when (and (not file-name) (equal buffer-name "*scratch*"))
+        (setq file-name buffer-name))
+      (when file-name
+        (dolist (pattern evil-jumper-ignored-file-patterns)
+          (when (string-match-p pattern file-name)
+            (setq excluded t)))
+        (unless excluded
+          (when target-list
+            (setq first-pos (caar target-list))
+            (setq first-file-name (car (cdar target-list))))
+          (unless (and (equal first-pos current-pos)
+                       (equal first-file-name file-name))
+            (push `(,current-pos ,file-name) target-list)))))
+    (evil-jumper--message "%s %s" (selected-window) (car target-list))
+    (evil-jumper--set-window-jump-list target-list)))
 
 (defun evil-jumper--set-jump ()
   (unless evil-jumper--jumping
     ;; clear out intermediary jumps when a new one is set
-    (nbutlast evil-jumper--list evil-jumper--idx)
-    (setq evil-jumper--idx -1)
+    (let* ((struct (evil-jumper--get-current))
+           (target-list (evil-jumper-jump-jumps struct))
+           (idx (evil-jumper-jump-idx struct)))
+      (nbutlast target-list idx)
+      (setf (evil-jumper-jump-jumps struct) target-list)
+      (setf (evil-jumper-jump-idx struct) -1))
     (evil-jumper--push)))
 
 (evil-define-motion evil-jumper/backward (count)
-  (let ((count (or count 1)))
+  (let* ((count (or count 1))
+         (struct (evil-jumper--get-current))
+         (idx (evil-jumper-jump-idx struct)))
     (evil-motion-loop (nil count)
-      (when (= evil-jumper--idx -1)
-        (setq evil-jumper--idx (+ evil-jumper--idx 1))
+      (when (= idx -1)
+        (setq idx (+ idx 1))
+        (setf (evil-jumper-jump-idx struct) idx)
         (evil-jumper--push))
-      (evil-jumper--jump-to-index (+ evil-jumper--idx 1)))))
+      (evil-jumper--jump-to-index (+ idx 1)))))
 
 (evil-define-motion evil-jumper/forward (count)
-  (let ((count (or count 1)))
+  (let* ((count (or count 1))
+         (struct (evil-jumper--get-current))
+         (idx (evil-jumper-jump-idx struct)))
     (evil-motion-loop (nil count)
-      (evil-jumper--jump-to-index (- evil-jumper--idx 1)))))
+      (evil-jumper--jump-to-index (- idx 1)))))
+
+(defun evil-jumper--window-configuration-hook (&rest args)
+  (let* ((window-list (window-list))
+         (existing-window (selected-window))
+         (new-window (previous-window)))
+    (when (and (not (eq existing-window new-window))
+               (> (length window-list) 1))
+      (evil-jumper--message "copying %s to %s" existing-window new-window)
+      (let* ((source-jump-struct (evil-jumper--get-current existing-window))
+             (source-list (evil-jumper-jump-jumps source-jump-struct))
+             (target-jump-struct (evil-jumper--get-current new-window)))
+        (setf (evil-jumper-jump-idx target-jump-struct) (evil-jumper-jump-idx source-jump-struct))
+        (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list))))
+    ;; delete obsolete windows
+    (maphash (lambda (key val)
+               (unless (member key window-list)
+                 (evil-jumper--message "removing %s" key)
+                 (remhash key evil-jumper--window-jumps)))
+             evil-jumper--window-jumps)))
+
+(add-hook 'window-configuration-change-hook 'evil-jumper--window-configuration-hook)
 
 (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
   (evil-jumper--set-jump))

@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0"))
 ;;
@@ -224,12 +224,16 @@ Note: The value of `evil-jumper-file' must also be non-nil."
          (new-window (previous-window)))
     (when (and (not (eq existing-window new-window))
                (> (length window-list) 1))
-      (evil-jumper--message "copying %s to %s" existing-window new-window)
-      (let* ((source-jump-struct (evil-jumper--get-current existing-window))
-             (source-list (evil-jumper-jump-jumps source-jump-struct))
-             (target-jump-struct (evil-jumper--get-current new-window)))
-        (setf (evil-jumper-jump-idx target-jump-struct) (evil-jumper-jump-idx source-jump-struct))
-        (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list))))
+      (let* ((target-jump-struct (evil-jumper--get-current new-window))
+             (target-jump-count (length (evil-jumper-jump-jumps target-jump-struct))))
+        (if (evil-jumper-jump-jumps target-jump-struct)
+            (evil-jumper--message "target window %s already has %s jumps" new-window target-jump-count)
+          (evil-jumper--message "new target window detected; copying %s to %s" existing-window new-window)
+          (let* ((source-jump-struct (evil-jumper--get-current existing-window))
+                 (source-list (evil-jumper-jump-jumps source-jump-struct)))
+            (when (= (length (evil-jumper-jump-jumps target-jump-struct)) 0)
+              (setf (evil-jumper-jump-idx target-jump-struct) (evil-jumper-jump-idx source-jump-struct))
+              (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list)))))))
     ;; delete obsolete windows
     (maphash (lambda (key val)
                (unless (member key window-list)

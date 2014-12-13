@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.0.3
+;; Version: 0.1.0
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0"))
 ;;
@@ -65,7 +65,7 @@
   :type 'boolean
   :group 'evil-jumper)
 
-(defcustom evil-jumper-ignored-file-patterns '("COMMIT_EDITMSG")
+(defcustom evil-jumper-ignored-file-patterns '("COMMIT_EDITMSG" "TAGS")
   "A list of pattern regexps to match on the file path to exclude from being included in the jump list."
   :type '(repeat string)
   :group 'evil-jumper)

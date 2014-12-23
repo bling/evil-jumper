@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0"))
 ;;
@@ -43,7 +43,7 @@
 ;;
 ;; Usage:
 ;;
-;; Requiring will automatically rebind C-o and C-i.
+;; (global-evil-jumper-mode)
 
 ;;; Code:
 
@@ -82,9 +82,11 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   :type 'integer
   :group 'evil-jumper)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar evil-jumper--jumping nil)
 (defvar evil-jumper--debug nil)
+(defvar evil-jumper--wired nil)
 
 (defvar
   evil-jumper--window-jumps
@@ -99,7 +101,6 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   (when evil-jumper--debug
     (setq format (concat "evil-jumper: " format))
     (apply 'message format args)))
-
 
 (defun evil-jumper--get-current (&optional window)
   (unless window
@@ -241,26 +242,55 @@ Note: The value of `evil-jumper-file' must also be non-nil."
                  (remhash key evil-jumper--window-jumps)))
              evil-jumper--window-jumps)))
 
-(add-hook 'window-configuration-change-hook 'evil-jumper--window-configuration-hook)
+(defun evil-jumper--init-file ()
+  (when (and (not evil-jumper--wired)
+             evil-jumper-file)
+    (evil-jumper--read-file)
+    (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
+      (evil-jumper--write-file))
+    (when (> evil-jumper-auto-save-interval 0)
+      (run-with-timer evil-jumper-auto-save-interval evil-jumper-auto-save-interval #'evil-jumper--write-file))
+    (setq evil-jumper--wired t)))
 
-(defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
-  (evil-jumper--set-jump))
+;;;###autoload
+(define-minor-mode evil-jumper-mode
+  "Minor mode for vim jumplist emulation."
+  :keymap (let ((map (make-sparse-keymap)))
+            (evil-define-key 'normal map (kbd "C-o") #'evil-jumper/backward)
+            (when evil-want-C-i-jump
+              (evil-define-key 'normal map (kbd "C-i") #'evil-jumper/forward))
+            map)
+  (if evil-jumper-mode
+      (progn
+        (evil-jumper--init-file)
+        (add-hook 'next-error-hook #'evil-jumper--set-jump)
+        (add-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
+        (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
+          (evil-jumper--set-jump))
+        (defadvice switch-to-buffer (before evil-jumper--switch-to-buffer activate)
+          (evil-jumper--set-jump)))
+    (progn
+      (remove-hook 'next-error-hook #'evil-jumper--set-jump)
+      (remove-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
+      (ad-remove-advice 'evil-set-jump 'after #'evil-jumper--evil-set-jump)
+      (ad-remove-advice 'switch-to-buffer 'before #'evil-jumper--switch-to-buffer)))
+  (evil-normalize-keymaps))
 
-(defadvice switch-to-buffer (before evil-jumper--switch-to-buffer activate)
-  (evil-jumper--set-jump))
+;;;###autoload
+(define-globalized-minor-mode global-evil-jumper-mode
+  evil-jumper-mode turn-on-evil-jumper-mode)
 
-(define-key evil-motion-state-map (kbd "C-o") 'evil-jumper/backward)
-(when evil-want-C-i-jump
-  (define-key evil-motion-state-map (kbd "C-i") 'evil-jumper/forward))
+;;;###autoload
+(defun turn-on-evil-jumper-mode ()
+  "Turns on vim jumplist emulation."
+  (interactive)
+  (evil-jumper-mode t))
 
-(add-hook 'next-error-hook 'evil-jumper--set-jump)
-
-(when evil-jumper-file
-  (evil-jumper--read-file)
-  (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
-    (evil-jumper--write-file))
-  (when (> evil-jumper-auto-save-interval 0)
-    (run-with-timer evil-jumper-auto-save-interval evil-jumper-auto-save-interval 'evil-jumper--write-file)))
+;;;###autoload
+(defun turn-off-evil-jumper-mode ()
+  "Turns off vim jumplist emulation."
+  (interactive)
+  (evil-jumper-mode -1))
 
 (provide 'evil-jumper)
 

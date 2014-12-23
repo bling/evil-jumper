@@ -6,12 +6,12 @@ evil-jumper is an add-on for [evil-mode][1] which replaces the implementation of
 installation
 ============
 
-Add `evil-jumper.el` to the `load-path` and `(require 'evil-jumper)`.
+Install `evil-jumper` from [MELPA][3].
 
 usage
 =====
 
-Requiring the file will automatically set up `C-i` and `C-o`.
+After installation, a minor mode `evil-jumper-mode` will be made available.  To enable it globally, add `(global-evil-jumper-mode)` to your configuration.
 
 license
 =======
@@ -20,3 +20,4 @@ license
 
 [1]: https://gitorious.org/evil
 [2]: http://www.gnu.org/copyleft/gpl.html
+[3]: http://melpa.org

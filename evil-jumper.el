@@ -257,7 +257,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 
 (when evil-jumper-file
   (evil-jumper--read-file)
-  (add-hook 'kill-emacs-hook 'evil-jumper--write-file)
+  (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
+    #'evil-jumper--write-file)
   (when (> evil-jumper-auto-save-interval 0)
     (run-with-timer evil-jumper-auto-save-interval evil-jumper-auto-save-interval 'evil-jumper--write-file)))
 

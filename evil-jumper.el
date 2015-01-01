@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0"))
 ;;
@@ -254,7 +254,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 
 ;;;###autoload
 (define-minor-mode evil-jumper-mode
-  "Minor mode for vim jumplist emulation."
+  "Global minor mode for vim jumplist emulation."
+  :global t
   :keymap (let ((map (make-sparse-keymap)))
             (evil-define-key 'normal map (kbd "C-o") #'evil-jumper/backward)
             (when evil-want-C-i-jump
@@ -277,10 +278,6 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   (evil-normalize-keymaps))
 
 ;;;###autoload
-(define-globalized-minor-mode global-evil-jumper-mode
-  evil-jumper-mode turn-on-evil-jumper-mode)
-
-;;;###autoload
 (defun turn-on-evil-jumper-mode ()
   "Turns on vim jumplist emulation."
   (interactive)
@@ -291,6 +288,9 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   "Turns off vim jumplist emulation."
   (interactive)
   (evil-jumper-mode -1))
+
+;;;###autoload
+(defalias 'global-evil-jumper-mode 'evil-jumper-mode)
 
 (provide 'evil-jumper)
 

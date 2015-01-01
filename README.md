@@ -11,7 +11,7 @@ Install `evil-jumper` from [MELPA][3].
 usage
 =====
 
-After installation, a minor mode `evil-jumper-mode` will be made available.  To enable it globally, add `(global-evil-jumper-mode)` to your configuration.
+After installation, a global minor mode `evil-jumper-mode` will be made available.
 
 license
 =======

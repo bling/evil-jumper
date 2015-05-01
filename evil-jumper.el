@@ -273,8 +273,8 @@ Note: The value of `evil-jumper-file' must also be non-nil."
     (progn
       (remove-hook 'next-error-hook #'evil-jumper--set-jump)
       (remove-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
-      (ad-remove-advice 'evil-set-jump 'after #'evil-jumper--evil-set-jump)
-      (ad-remove-advice 'switch-to-buffer 'before #'evil-jumper--switch-to-buffer)))
+      (ad-remove-advice 'evil-set-jump 'after 'evil-jumper--evil-set-jump)
+      (ad-remove-advice 'switch-to-buffer 'before 'evil-jumper--switch-to-buffer)))
   (evil-normalize-keymaps))
 
 ;;;###autoload

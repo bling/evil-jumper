@@ -269,12 +269,15 @@ Note: The value of `evil-jumper-file' must also be non-nil."
         (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
           (evil-jumper--set-jump))
         (defadvice switch-to-buffer (before evil-jumper--switch-to-buffer activate)
+          (evil-jumper--set-jump))
+        (defadvice find-tag-noselect (before evil-jumper--find-tag-noselect activate)
           (evil-jumper--set-jump)))
     (progn
       (remove-hook 'next-error-hook #'evil-jumper--set-jump)
       (remove-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
       (ad-remove-advice 'evil-set-jump 'after 'evil-jumper--evil-set-jump)
-      (ad-remove-advice 'switch-to-buffer 'before 'evil-jumper--switch-to-buffer)))
+      (ad-remove-advice 'switch-to-buffer 'before 'evil-jumper--switch-to-buffer)
+      (ad-remove-advice 'find-tag-noselect 'before 'evil-jumper--find-tag-noselect)))
   (evil-normalize-keymaps))
 
 ;;;###autoload

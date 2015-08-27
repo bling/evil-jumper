@@ -141,7 +141,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
         (let ((pos (car jump))
               (file-name (cadr jump)))
           (when (file-exists-p file-name)
-            (insert (format "%d" pos))
+            (insert (format "%d" (marker-position pos)))
             (insert " ")
             (insert file-name)
             (insert "\n")))))))

@@ -128,7 +128,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
           (jumps nil))
       (dolist (line lines)
         (let* ((parts (split-string line " "))
-               (pos (copy-marker (string-to-number (car parts))))
+               (pos (string-to-number (car parts)))
                (file-name (cadr parts)))
           (push (list pos file-name) jumps)))
       (evil-jumper--set-window-jump-list jumps))))

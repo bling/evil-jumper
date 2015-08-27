@@ -170,7 +170,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
       (nbutlast target-list 1))
     (let ((file-name (buffer-file-name))
           (buffer-name (buffer-name))
-          (current-pos (point))
+          (current-pos (point-marker))
           (first-pos nil)
           (first-file-name nil)
           (excluded nil))

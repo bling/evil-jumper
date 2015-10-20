@@ -8,7 +8,7 @@
 ;; Created: 2014-07-01
 ;; Version: 0.2.1
 ;; Keywords: evil vim jumplist jump list
-;; Package-Requires: ((evil "0"))
+;; Package-Requires: ((evil "0") (cl-lib "0.5"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -47,7 +47,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'evil)
 
 (defgroup evil-jumper nil
@@ -93,7 +93,7 @@ Note: The value of `evil-jumper-file' must also be non-nil."
   (make-hash-table)
   "Hashtable which stores all jumps on a per window basis.")
 
-(defstruct evil-jumper-jump
+(cl-defstruct evil-jumper-jump
   jumps
   (idx -1))
 

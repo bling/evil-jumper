@@ -65,7 +65,7 @@
   :type 'boolean
   :group 'evil-jumper)
 
-(defcustom evil-jumper-ignored-file-patterns '("COMMIT_EDITMSG" "TAGS")
+(defcustom evil-jumper-ignored-file-patterns '("COMMIT_EDITMSG$" "TAGS$")
   "A list of pattern regexps to match on the file path to exclude from being included in the jump list."
   :type '(repeat string)
   :group 'evil-jumper)

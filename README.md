@@ -18,6 +18,6 @@ license
 
 [GPL3][2]
 
-[1]: https://gitorious.org/evil
+[1]: https://bitbucket.org/lyro/evil/wiki/Home
 [2]: http://www.gnu.org/copyleft/gpl.html
 [3]: http://melpa.org

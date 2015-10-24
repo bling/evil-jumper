@@ -230,8 +230,10 @@
     (evil-jumper--set-window-jump-list evil-jumper--jump-list)
     (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
       (evil-jumper--savehist))
-    (push 'evil-jumper--jump-list savehist-additional-variables)
-    (add-hook 'savehist-save-hook #'evil-jumper--savehist)
+    (eval-after-load 'savehist
+      '(progn
+         (push 'evil-jumper--jump-list savehist-additional-variables)
+         (add-hook 'savehist-save-hook #'evil-jumper--savehist)))
     (setq evil-jumper--wired t)))
 
 ;;;###autoload

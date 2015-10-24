@@ -111,12 +111,8 @@
   (let ((struct (evil-jumper--get-current)))
     (setf (evil-jumper-jump-jumps struct) list)))
 
-(defun evil-jumper--read-file ()
-  "Restores the jump list from the persisted file."
-  (evil-jumper--set-window-jump-list evil-jumper--jump-list))
-
-(defun evil-jumper--write-file ()
-  "Saves the current contents of the jump list to a persisted file."
+(defun evil-jumper--savehist ()
+  "Saves the current contents of the jump list to history file."
   (setq evil-jumper--jump-list
         (cl-remove-if-not #'identity
                           (mapcar #'(lambda (jump)
@@ -228,13 +224,13 @@
                  (remhash key evil-jumper--window-jumps)))
              evil-jumper--window-jumps)))
 
-(defun evil-jumper--init-file ()
+(defun evil-jumper--init-savehist ()
   (unless evil-jumper--wired
-    (evil-jumper--read-file)
+    (evil-jumper--set-window-jump-list evil-jumper--jump-list)
     (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
-      (evil-jumper--write-file))
+      (evil-jumper--savehist))
     (push 'evil-jumper--jump-list savehist-additional-variables)
-    (add-hook 'savehist-save-hook #'evil-jumper--write-file)
+    (add-hook 'savehist-save-hook #'evil-jumper--savehist)
     (setq evil-jumper--wired t)))
 
 ;;;###autoload
@@ -248,7 +244,7 @@
             map)
   (if evil-jumper-mode
       (progn
-        (evil-jumper--init-file)
+        (evil-jumper--init-savehist)
         (add-hook 'next-error-hook #'evil-jumper--set-jump)
         (add-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
         (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)

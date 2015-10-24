@@ -70,25 +70,6 @@
   :type '(repeat string)
   :group 'evil-jumper)
 
-(defcustom evil-jumper-plug-into-savehist t
-  "Rely on savehist for persistent jump list instead of `evil-jumper-file'.
-
-Note: The interval can be set with `savehist-autosave-interval' accordingly."
-  :type 'boolean
-  :group 'evil-jumper)
-
-(defcustom evil-jumper-file nil
-  "The location of the file to save/load the jump list."
-  :type 'string
-  :group 'evil-jumper)
-
-(defcustom evil-jumper-auto-save-interval 0
-  "If positive, specifies the interval in seconds to persist the jump list.
-
-Note: The value of `evil-jumper-file' must also be non-nil."
-  :type 'integer
-  :group 'evil-jumper)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar evil-jumper--jumping nil)
@@ -132,50 +113,24 @@ Note: The value of `evil-jumper-file' must also be non-nil."
 
 (defun evil-jumper--read-file ()
   "Restores the jump list from the persisted file."
-  (if evil-jumper-plug-into-savehist
-      (evil-jumper--set-window-jump-list evil-jumper--jump-list)
-    (when (file-exists-p evil-jumper-file)
-      (let ((lines (with-temp-buffer
-                     (insert-file-contents evil-jumper-file)
-                     (split-string (buffer-string) "\n" t)))
-            (jumps nil))
-        (dolist (line lines)
-          (let* ((parts (split-string line " "))
-                 (pos (string-to-number (car parts)))
-                 (file-name (cadr parts)))
-            (push (list pos file-name) jumps)))
-        (evil-jumper--set-window-jump-list jumps)))))
+  (evil-jumper--set-window-jump-list evil-jumper--jump-list))
 
 (defun evil-jumper--write-file ()
   "Saves the current contents of the jump list to a persisted file."
-  (if evil-jumper-plug-into-savehist
-      (setq evil-jumper--jump-list
-            (cl-remove-if-not #'identity
-                              (mapcar #'(lambda (jump)
-                                          (let* ((mark (car jump))
-                                                 (pos (if (markerp mark)
-                                                          (marker-position mark)
-                                                        mark))
-                                                 (file-name (cadr jump)))
-                                            (if (and (not (file-remote-p file-name))
-                                                     (file-exists-p file-name)
-                                                     pos)
-                                                (list pos file-name)
-                                              nil)))
-                                      (evil-jumper--get-window-jump-list))))
-    (with-temp-file evil-jumper-file
-      (let ((jumps (evil-jumper--get-window-jump-list)))
-        (dolist (jump jumps)
-          (let* ((mark (car jump))
-                 (pos (if (markerp mark)
-                          (marker-position mark)
-                        mark))
-                 (file-name (cadr jump)))
-            (when (and (file-exists-p file-name) pos)
-              (insert (format "%d" pos))
-              (insert " ")
-              (insert file-name)
-              (insert "\n"))))))))
+  (setq evil-jumper--jump-list
+        (cl-remove-if-not #'identity
+                          (mapcar #'(lambda (jump)
+                                      (let* ((mark (car jump))
+                                             (pos (if (markerp mark)
+                                                      (marker-position mark)
+                                                    mark))
+                                             (file-name (cadr jump)))
+                                        (if (and (not (file-remote-p file-name))
+                                                 (file-exists-p file-name)
+                                                 pos)
+                                            (list pos file-name)
+                                          nil)))
+                                  (evil-jumper--get-window-jump-list)))))
 
 (defun evil-jumper--jump-to-index (idx)
   (let ((target-list (evil-jumper--get-window-jump-list)))
@@ -274,17 +229,12 @@ Note: The value of `evil-jumper-file' must also be non-nil."
              evil-jumper--window-jumps)))
 
 (defun evil-jumper--init-file ()
-  (when (and (not evil-jumper--wired)
-             (or evil-jumper-plug-into-savehist
-                 evil-jumper-file))
+  (unless evil-jumper--wired
     (evil-jumper--read-file)
     (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
       (evil-jumper--write-file))
-    (when evil-jumper-plug-into-savehist
-      (push 'evil-jumper--jump-list savehist-additional-variables)
-      (add-hook 'savehist-save-hook #'evil-jumper--write-file))
-    (when (> evil-jumper-auto-save-interval 0)
-      (run-with-timer evil-jumper-auto-save-interval evil-jumper-auto-save-interval #'evil-jumper--write-file))
+    (push 'evil-jumper--jump-list savehist-additional-variables)
+    (add-hook 'savehist-save-hook #'evil-jumper--write-file)
     (setq evil-jumper--wired t)))
 
 ;;;###autoload

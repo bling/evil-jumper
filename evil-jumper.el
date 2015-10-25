@@ -6,7 +6,7 @@
 ;; Filename: evil-jumper.el
 ;; Description: Jump like vimmers do!
 ;; Created: 2014-07-01
-;; Version: 0.2.2
+;; Version: 0.3.0
 ;; Keywords: evil vim jumplist jump list
 ;; Package-Requires: ((evil "0") (cl-lib "0.5"))
 ;;
@@ -44,7 +44,7 @@
 ;;
 ;; Usage:
 ;;
-;; (evil-jumper-mode 1)
+;; (evil-jumper-mode t)
 
 ;;; Code:
 
@@ -77,14 +77,11 @@
 (defvar evil-jumper--debug nil)
 (defvar evil-jumper--wired nil)
 
-(defvar
-  evil-jumper--window-jumps
-  (make-hash-table)
+(defvar evil-jumper--window-jumps (make-hash-table)
   "Hashtable which stores all jumps on a per window basis.")
 
-(defvar
-  evil-jumper--jump-list nil
-  "Printable variable which stores all jumps on a per window basis.")
+(defvar evil-jumper--jump-list nil
+  "Printable version of `evil-jumper--window-jumps'.")
 
 (cl-defstruct evil-jumper-jump
   jumps
@@ -112,8 +109,8 @@
   (let ((struct (evil-jumper--get-current)))
     (setf (evil-jumper-jump-jumps struct) list)))
 
-(defun evil-jumper--savehist ()
-  "Saves the current contents of the jump list to history file."
+(defun evil-jumper--savehist-sync ()
+  "Updates the printable value of window jumps for `savehist'."
   (setq evil-jumper--jump-list
         (cl-remove-if-not #'identity
                           (mapcar #'(lambda (jump)
@@ -225,15 +222,13 @@
                  (remhash key evil-jumper--window-jumps)))
              evil-jumper--window-jumps)))
 
-(defun evil-jumper--init-savehist ()
+(defun evil-jumper--savehist-init ()
   (unless evil-jumper--wired
     (evil-jumper--set-window-jump-list evil-jumper--jump-list)
-    (defadvice save-buffers-kill-emacs (before evil-jumper--save-buffers-kill-emacs activate)
-      (evil-jumper--savehist))
     (eval-after-load 'savehist
       '(progn
          (push 'evil-jumper--jump-list savehist-additional-variables)
-         (add-hook 'savehist-save-hook #'evil-jumper--savehist)))
+         (add-hook 'savehist-save-hook #'evil-jumper--savehist-sync)))
     (setq evil-jumper--wired t)))
 
 ;;;###autoload
@@ -247,7 +242,9 @@
             map)
   (if evil-jumper-mode
       (progn
-        (evil-jumper--init-savehist)
+        (if (boundp 'evil-jumper-file)
+            (message "The variable 'evil-jumper-file' is obsolete.  Persistence is done with 'savehist' now."))
+        (evil-jumper--savehist-init)
         (add-hook 'next-error-hook #'evil-jumper--set-jump)
         (add-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
         (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)

@@ -199,8 +199,14 @@
     (evil-motion-loop (nil count)
       (evil-jumper--jump-to-index (- idx 1)))))
 
+(defun all-windows ()
+  "Get a list of all of the windows across all frames"
+  (let* ((frames (frame-list))
+	 (nested-windows (mapcar 'window-list frames)))
+    (apply 'append nested-windows)))
+
 (defun evil-jumper--window-configuration-hook (&rest args)
-  (let* ((window-list (window-list))
+  (let* ((window-list (all-windows))
          (existing-window (selected-window))
          (new-window (previous-window)))
     (when (and (not (eq existing-window new-window))

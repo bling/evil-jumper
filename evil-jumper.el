@@ -202,7 +202,7 @@
 (defun all-windows ()
   "Get a list of all of the windows across all frames"
   (let* ((frames (frame-list))
-	 (nested-windows (mapcar 'window-list frames)))
+         (nested-windows (mapcar 'window-list frames)))
     (apply 'append nested-windows)))
 
 (defun evil-jumper--window-configuration-hook (&rest args)

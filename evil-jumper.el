@@ -200,7 +200,7 @@
       (evil-jumper--jump-to-index (- idx 1)))))
 
 (defun evil-jumper--window-configuration-hook (&rest args)
-  (let* ((window-list (window-list))
+  (let* ((window-list (window-list-1 nil nil t))
          (existing-window (selected-window))
          (new-window (previous-window)))
     (when (and (not (eq existing-window new-window))

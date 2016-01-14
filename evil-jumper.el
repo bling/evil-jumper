@@ -236,9 +236,9 @@
   "Global minor mode for vim jumplist emulation."
   :global t
   :keymap (let ((map (make-sparse-keymap)))
-            (evil-define-key 'normal map (kbd "C-o") #'evil-jumper/backward)
+            (evil-define-key 'normal map [remap evil-jump-backward] #'evil-jumper/backward)
             (when evil-want-C-i-jump
-              (evil-define-key 'normal map (kbd "C-i") #'evil-jumper/forward))
+              (evil-define-key 'normal map [remap evil-jump-forward] #'evil-jumper/forward))
             map)
   (if evil-jumper-mode
       (progn

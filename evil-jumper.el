@@ -88,7 +88,7 @@
 (defvar evil-jumper--jump-list nil
   "Printable version of `evil-jumper--window-jumps'.")
 
-(cl-defstruct evil-jumper-jump
+(cl-defstruct evil-jumper-struct
   jumps
   (idx -1))
 
@@ -102,17 +102,17 @@
     (setq window (frame-selected-window)))
   (let* ((jump-struct (gethash window evil-jumper--window-jumps)))
     (unless jump-struct
-      (setq jump-struct (make-evil-jumper-jump))
+      (setq jump-struct (make-evil-jumper-struct))
       (puthash window jump-struct evil-jumper--window-jumps))
     jump-struct))
 
 (defun evil-jumper--get-window-jump-list ()
   (let ((struct (evil-jumper--get-current)))
-    (evil-jumper-jump-jumps struct)))
+    (evil-jumper-struct-jumps struct)))
 
 (defun evil-jumper--set-window-jump-list (list)
   (let ((struct (evil-jumper--get-current)))
-    (setf (evil-jumper-jump-jumps struct) list)))
+    (setf (evil-jumper-struct-jumps struct) list)))
 
 (defun evil-jumper--savehist-sync ()
   "Updates the printable value of window jumps for `savehist'."
@@ -136,7 +136,7 @@
     (when (and (< idx (length target-list))
                (>= idx 0))
       (run-hooks 'evil-jumper-pre-jump-hook)
-      (setf (evil-jumper-jump-idx (evil-jumper--get-current)) idx)
+      (setf (evil-jumper-struct-idx (evil-jumper--get-current)) idx)
       (let* ((place (nth idx target-list))
              (pos (car place))
              (file-name (cadr place)))
@@ -179,28 +179,28 @@
   (unless evil-jumper--jumping
     ;; clear out intermediary jumps when a new one is set
     (let* ((struct (evil-jumper--get-current))
-           (target-list (evil-jumper-jump-jumps struct))
-           (idx (evil-jumper-jump-idx struct)))
+           (target-list (evil-jumper-struct-jumps struct))
+           (idx (evil-jumper-struct-idx struct)))
       (nbutlast target-list idx)
-      (setf (evil-jumper-jump-jumps struct) target-list)
-      (setf (evil-jumper-jump-idx struct) -1))
+      (setf (evil-jumper-struct-jumps struct) target-list)
+      (setf (evil-jumper-struct-idx struct) -1))
     (evil-jumper--push)))
 
 (evil-define-motion evil-jumper/backward (count)
   (let* ((count (or count 1))
          (struct (evil-jumper--get-current))
-         (idx (evil-jumper-jump-idx struct)))
+         (idx (evil-jumper-struct-idx struct)))
     (evil-motion-loop (nil count)
       (when (= idx -1)
         (setq idx (+ idx 1))
-        (setf (evil-jumper-jump-idx struct) idx)
+        (setf (evil-jumper-struct-idx struct) idx)
         (evil-jumper--push))
       (evil-jumper--jump-to-index (+ idx 1)))))
 
 (evil-define-motion evil-jumper/forward (count)
   (let* ((count (or count 1))
          (struct (evil-jumper--get-current))
-         (idx (evil-jumper-jump-idx struct)))
+         (idx (evil-jumper-struct-idx struct)))
     (evil-motion-loop (nil count)
       (evil-jumper--jump-to-index (- idx 1)))))
 
@@ -211,15 +211,15 @@
     (when (and (not (eq existing-window new-window))
                (> (length window-list) 1))
       (let* ((target-jump-struct (evil-jumper--get-current new-window))
-             (target-jump-count (length (evil-jumper-jump-jumps target-jump-struct))))
-        (if (evil-jumper-jump-jumps target-jump-struct)
+             (target-jump-count (length (evil-jumper-struct-jumps target-jump-struct))))
+        (if (evil-jumper-struct-jumps target-jump-struct)
             (evil-jumper--message "target window %s already has %s jumps" new-window target-jump-count)
           (evil-jumper--message "new target window detected; copying %s to %s" existing-window new-window)
           (let* ((source-jump-struct (evil-jumper--get-current existing-window))
-                 (source-list (evil-jumper-jump-jumps source-jump-struct)))
-            (when (= (length (evil-jumper-jump-jumps target-jump-struct)) 0)
-              (setf (evil-jumper-jump-idx target-jump-struct) (evil-jumper-jump-idx source-jump-struct))
-              (setf (evil-jumper-jump-jumps target-jump-struct) (copy-sequence source-list)))))))
+                 (source-list (evil-jumper-struct-jumps source-jump-struct)))
+            (when (= (length (evil-jumper-struct-jumps target-jump-struct)) 0)
+              (setf (evil-jumper-struct-idx target-jump-struct) (evil-jumper-struct-idx source-jump-struct))
+              (setf (evil-jumper-struct-jumps target-jump-struct) (copy-sequence source-list)))))))
     ;; delete obsolete windows
     (maphash (lambda (key val)
                (unless (member key window-list)

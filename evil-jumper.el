@@ -82,6 +82,9 @@
 (defvar evil-jumper--debug nil)
 (defvar evil-jumper--wired nil)
 
+(defvar evil-jumper--buffer-targets "\\*\\(new\\|scratch\\)\\*"
+  "Regexp to match against `buffer-name' to determine whether it's a valid jump target.")
+
 (defvar evil-jumper--window-jumps (make-hash-table)
   "Hashtable which stores all jumps on a per window basis.")
 
@@ -141,8 +144,7 @@
              (pos (car place))
              (file-name (cadr place)))
         (setq evil-jumper--jumping t)
-        (if (or (equal file-name "*scratch*")
-                (equal file-name "*new*"))
+        (if (string-match-p evil-jumper--buffer-targets file-name)
             (switch-to-buffer file-name)
           (find-file file-name))
         (setq evil-jumper--jumping nil)
@@ -161,8 +163,7 @@
           (first-file-name nil)
           (excluded nil))
       (when (and (not file-name)
-                 (or (equal buffer-name "*scratch*")
-                     (equal buffer-name "*new*")))
+                 (string-match-p evil-jumper--buffer-targets buffer-name))
         (setq file-name buffer-name))
       (when file-name
         (dolist (pattern evil-jumper-ignored-file-patterns)

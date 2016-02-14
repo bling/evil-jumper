@@ -2,6 +2,10 @@
 
 evil-jumper is an add-on for [evil-mode][1] which replaces the implementation of the jump list such that it mimics more closely with Vim's behavior. Specifically, it will jump across buffer boundaries and revive dead buffers if necessary. The jump list can also be persisted to history file using `savehist` and restored between sessions.
 
+# package status
+
+This package has been integrated back into evil-mode.  It continues to exist to provide support for older versions of evil-mode, but is otherwise obsolete moving forward.
+
 # installation
 
 Install `evil-jumper` from [MELPA][3].

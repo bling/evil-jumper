@@ -248,6 +248,10 @@
             (evil-define-key 'normal map [remap evil-jump-backward] #'evil-jumper/backward)
             (evil-define-key 'normal map [remap evil-jump-forward] #'evil-jumper/forward)
             map)
+  (when (fboundp 'evil-jumps-struct-p)
+    (message "evil-jumper has been integrated into evil-mode and is obsolete.")
+    (setq evil-jumper-mode nil))
+
   (if evil-jumper-mode
       (progn
         (if (boundp 'evil-jumper-file)
@@ -257,7 +261,7 @@
         (evil-jumper--savehist-init)
         (add-hook 'next-error-hook #'evil-jumper--set-jump)
         (add-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
-        (defadvice evil-set-jump (after evil-jumper--evil-set-jump activate)
+        (defadvice evil-set-jump (after evil-jumper activate)
           (evil-jumper--set-jump))
         (defadvice switch-to-buffer (before evil-jumper activate)
           (evil-jumper--set-jump))
@@ -265,7 +269,7 @@
           (evil-jumper--set-jump))
         (defadvice find-tag-noselect (before evil-jumper activate)
           (evil-jumper--set-jump)))
-    (progn
+    (when evil-jumper--wired
       (remove-hook 'next-error-hook #'evil-jumper--set-jump)
       (remove-hook 'window-configuration-change-hook #'evil-jumper--window-configuration-hook)
       (ad-remove-advice 'evil-set-jump 'after 'evil-jumper)
